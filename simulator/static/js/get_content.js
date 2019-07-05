@@ -51,6 +51,7 @@ function set_content(time, event, operation) {
       $("#loading").css("visibility", "hidden");
     },
     success: function (result) {
+      resetCanvas();
       setValues(result);
       var ctx = document.getElementById("graph").getContext("2d");
       var config = {
@@ -111,6 +112,11 @@ function set_content(time, event, operation) {
           }
         }
       };
+      // console.log(typeof graph);
+      // if (typeof graph != "undefined") {
+      //   console.log('destroy');
+      //   graph.destroy();
+      // }
       var graph = new Chart(ctx, config);
     },
     error: function (result) {
@@ -133,4 +139,8 @@ function addCommas(nStr) {
   formatted =
     positive.length > 1 ? "- R$ " + positive[1] + x2 : "R$ " + x1 + x2;
   return formatted;
+}
+function resetCanvas() {
+  $('#graph').remove(); // this is my <canvas> element
+  $('#graph-container').append('<canvas id="graph" height="500px">a</canvas>');
 }
