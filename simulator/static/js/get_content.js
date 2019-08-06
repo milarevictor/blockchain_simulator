@@ -83,7 +83,7 @@ function set_content(time, event, operation) {
                 display: true,
                 scaleLabel: {
                   display: true,
-                  labelString: "Tempo (dias)"
+                  labelString: "Tempo (horas)"
                 },
                 ticks: {
                   autoSkip: true,

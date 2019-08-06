@@ -8,6 +8,7 @@ from django.http import JsonResponse
 import datetime
 import math
 import numpy as np
+from numpy.random import choice
 
 
 def create_simul(request):
@@ -91,10 +92,10 @@ def start_simul(request):
         latest_event = Event.objects.filter(
             blockchain=blockchain).count()
         if button == 'next_time':
-            if int(time) < 0:
+            if float(time) < 0:
                 time = 0
-            while int(time) > latest_time:
-                generate_events(100, simulation, latest_time)
+            while float(time) > latest_time:
+                generate_events(180, simulation, latest_time)
                 latest_time = Event.objects.filter(
                     blockchain=blockchain).latest('time').time
             num_events = Event.objects.filter(
@@ -112,7 +113,8 @@ def start_simul(request):
                 time = Event.objects.filter(
                     blockchain=blockchain).filter(event_id=int(event)).first().time
         dados = simulation.blockchain.get_num_info(time=time)
-        dados['time'] = time
+        print(dados)
+        dados['time'] = int(time)
         dados['num_events'] = num_events
         dados_graph = plotGraph(time=time, sid=simulation_id)
         dados['dados_graph'] = dados_graph
@@ -144,7 +146,7 @@ def start_simul(request):
         event = Event(time=0, typeOfEvent=3, miner=start_miner,
                       blockchain=blockchain)
         event.save()
-        message = str(int(0)) + ' dia(s): Inserção de minerador.'
+        message = str(int(0)) + ' hora(s): Inserção de minerador.'
         log = Log(event_id=event.event_id, blockchain=simulation.blockchain,
                   message=message)
         log.save()
@@ -165,41 +167,60 @@ def start_simul(request):
 
 def generate_events(num_events, simulation, time=0):
     events = 0
-    # O valor do minerCP tá setado manualmente, virá do formulário depois
-    minersCP = simulation.minersCP
-    # computPower em Mhash/s
-    userCP = simulation.user.computPower
-    # TotalCP em Mhash/s
-    totalCP = simulation.blockchain.get_total_cp(time)
-    # Average time em minutos
-    avg_time = simulation.blockchain.avg_time
-    # Cálculo da dificuldade com total MHash
-    dificuldade = totalCP*avg_time*60
-    while events < num_events:
-        # time deve ser dado em dias
-        time += 1
-        try:
-            block_time = Event.objects.filter(
-                blockchain=simulation.blockchain).filter(typeOfEvent=1).latest('event_id').time
-        except:
-            block_time = 0
-        time_interval = time - block_time
-        # Abaixo eu defini o lambda de Poisson como 0.3
-        miners_entered = np.random.poisson(simulation.lambda_prob, 1)[0]
-        prob = 1 - math.exp(-1*userCP*time_interval*24*3600/dificuldade)
-        if prob > 0.5:
-            block = Block(blockchain=simulation.blockchain)
-            block.save()
-            last_id = Event.objects.filter(
-                blockchain=simulation.blockchain).latest('event_id').event_id
+    while(events < num_events):
+        # O valor do minerCP em MHash/s
+        minersCP = simulation.minersCP
+        # computPower em MHash/s
+        userCP = simulation.user.computPower
+        # TotalCP em MHash/s
+        totalCP = simulation.blockchain.get_total_cp(time)
+        # Average time em minutos
+        avg_time = simulation.blockchain.avg_time
+        # Cálculo da dificuldade com total MHash
+        dificuldade = totalCP*avg_time*60
+        values = []
+        for i in range(10):
+            values.append(np.random.exponential(scale=10))
+        interval = round(np.average(values))/60
+        time += interval
+        # miners = []
+        # probability_distribution = []
+        num_miners = simulation.blockchain.get_num_info(time)['num_miners']
+        # miner_prob = minersCP/totalCP
+        user_prob = userCP/totalCP
+        random_num = np.random.random_sample()
+        # for i in range(num_miners):
+        #     miners.append('m')
+        #     probability_distribution.append(miner_prob)
+        # miners.append('u')
+        # probability_distribution.append(user_prob)
+        # miner_choice = choice(miners, 1, p=probability_distribution)
+        last_id = Event.objects.filter(
+            blockchain=simulation.blockchain).latest('event_id').event_id
+
+        # time = next_time_generate
+        block = Block(blockchain=simulation.blockchain)
+        block.save()
+
+        events += 1
+        if(random_num <= user_prob):
+
+            event = Event(time=time, event_id=last_id+1, typeOfEvent=1,
+                          blockchain=simulation.blockchain, block=block, miner='user')
+            event.save()
+            message = str(int(time)) + \
+                ' hora(s): Bloco minerado pelo usuário.'
+        else:
             event = Event(time=time, event_id=last_id+1, typeOfEvent=1,
                           blockchain=simulation.blockchain, block=block)
             event.save()
-            message = str(int(time)) + ' dias(s): Bloco minerado.'
-            log = Log(event_id=event.event_id, blockchain=simulation.blockchain,
-                      message=message)
-            log.save()
-            events += 1
+            message = str(int(time)) + \
+                ' hora(s): Bloco minerado por um minerador.'
+        log = Log(event_id=event.event_id, blockchain=simulation.blockchain,
+                  message=message)
+        log.save()
+        miners_entered = np.random.poisson(
+            simulation.lambda_prob, int(round(np.average(values))))[0]
         for i in range(miners_entered):
             miner = Miner(blockchain=simulation.blockchain,
                           computPower=minersCP)
@@ -209,9 +230,10 @@ def generate_events(num_events, simulation, time=0):
             event = Event(time=time, event_id=last_id + 1, typeOfEvent=3, miner=miner,
                           blockchain=simulation.blockchain)
             event.save()
-            message = str(int(time)) + ' dia(s): Inserção de minerador.'
+            message = str(int(time)) + ' hora(s): Inserção de minerador.'
             log = Log(event_id=event.event_id, blockchain=simulation.blockchain,
                       message=message)
             log.save()
             events += 1
+
     return simulation.blockchain.get_num_info(time)

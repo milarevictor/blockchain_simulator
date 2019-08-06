@@ -48,13 +48,15 @@ class Blockchain(models.Model):
 
     def get_total_cp(self, time):
         totalCP = 0
-        user = Simulation.objects.filter(blockchain=self)[0].user
+        simulation = Simulation.objects.filter(blockchain=self)[0]
+
         event_set = Event.objects.filter(blockchain=self).filter(
-            typeOfEvent=3).filter(time__lte=time)
-        for event in event_set:
-            miner = event.miner
-            totalCP += miner.computPower
-        return totalCP + user.computPower
+            typeOfEvent=3).filter(time__lte=time).count()
+        # for event in event_set:
+        #     miner = event.miner
+        #     totalCP += miner.computPower
+        totalCP = event_set*simulation.minersCP
+        return totalCP + simulation.user.computPower
 
 
 class Block(models.Model):
@@ -75,7 +77,7 @@ class Event(models.Model):
         null=False, choices=event_choices, help_text='Tipo de evento.')
     blockchain = models.ForeignKey(
         'Blockchain', on_delete=models.CASCADE, null=False)
-    miner = models.ForeignKey('Miner', on_delete=models.CASCADE, null=True)
+    miner = models.CharField(max_length=10, null=True)
     block = models.ForeignKey('Block', on_delete=models.CASCADE, null=True)
 
 

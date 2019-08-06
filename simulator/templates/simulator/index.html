@@ -77,7 +77,7 @@
           </li>
           <li>
             <strong><img src="{% static 'images/clock.svg'%}" alt="" /><time
-                id="time_trans">22</time></strong><span>Dias transcorridos</span>
+                id="time_trans">22</time></strong><span>Horas transcorridas</span>
           </li>
           <li>
             <strong id="events_occ"><img src="{% static 'images/event.svg'%}" alt="" />
@@ -88,7 +88,7 @@
       </div>
       <div id="graph-container" class="graphic" url-endpoint='{% url "start-simul" %}'>
         <div class="graph_info">
-          <strong>Análise Lucrativa</strong><span>Tempo: <time id="time_trans_graph">22</time> dias
+          <strong>Análise Lucrativa</strong><span>Tempo: <time id="time_trans_graph">22</time> horas
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Eventos:
             <events id="events_graph">35</events></span>
         </div>
@@ -140,7 +140,7 @@
     // console.log("{{dados_graph.data}}");
     var time_input = document.getElementById("time");
     var event_input = document.getElementById("event");
-    time_input.placeholder = "0 dias";
+    time_input.placeholder = "0 horas";
     event_input.placeholder = "{{num_events}} evento(s)";
     results = {
       num_miners: "{{num_miners}}",
